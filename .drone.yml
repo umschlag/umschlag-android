@@ -1,46 +1,31 @@
-workspace:
-  base: /srv/app
-  path: src/github.com/umschlag/umschlag-android
+---
+kind: pipeline
+name: testing
 
-pipeline:
-  # cache-restore:
-  #   image: plugins/s3-cache:1
-  #   pull: true
-  #   secrets: [ cache_s3_endpoint, cache_s3_access_key, cache_s3_secret_key ]
-  #   restore: true
-  #   when:
-  #     local: false
+platform:
+  os: linux
+  arch: amd64
 
+steps:
+- name: notify
+  image: plugins/matrix:1
+  pull: always
+  settings:
+    username:
+      from_secret: matrix_username
+    password:
+      from_secret: matrix_password
+    roomid:
+      from_secret: matrix_roomid
+  when:
+    event:
+    - push
+    - tag
+    status:
+    - failure
 
-
-  # cache-rebuild:
-  #   image: plugins/s3-cache:1
-  #   pull: true
-  #   secrets: [ cache_s3_endpoint, cache_s3_access_key, cache_s3_secret_key ]
-  #   rebuild: true
-  #   mount:
-  #     -
-  #   when:
-  #     local: false
-  #     event: [ push ]
-  #     branch: [ master ]
-
-  # cache-flush:
-  #   image: plugins/s3-cache:1
-  #   pull: true
-  #   secrets: [ cache_s3_endpoint, cache_s3_access_key, cache_s3_secret_key ]
-  #   flush: true
-  #   flush_age: 14
-  #   when:
-  #     local: false
-  #     event: [ push ]
-  #     branch: [ master ]
-
-  notify-matrix:
-    image: plugins/matrix:1
-    pull: true
-    secrets: [ matrix_roomid, matrix_username, matrix_password ]
-    when:
-      local: false
-      event: [ push, tag ]
-      status: [ changed, failure ]
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+  - refs/pull/**
